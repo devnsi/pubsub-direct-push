@@ -19,19 +19,14 @@ type server struct {
 }
 
 func (s *server) Publish(_ context.Context, req *receive.PublishRequest) (*receive.PublishResponse, error) {
-	log.Printf("Push published message: topic=%q messages=%d", req.Topic, len(req.Messages))
+	log.Printf("push messages: topic=%q messages=%d", req.Topic, len(req.Messages))
 	var resp receive.PublishResponse
 	for _, msg := range req.Messages {
 		msg.MessageId = uuid.New().String() // because it's empty on requests from emulator.
-		s.log(msg)
 		s.push(msg, req)
 		resp.MessageIds = append(resp.MessageIds, msg.MessageId)
 	}
 	return &resp, nil
-}
-
-func (s *server) log(msg *receive.PubsubMessage) {
-	log.Printf("-> message received %s", msg.MessageId)
 }
 
 func (s *server) push(msg *receive.PubsubMessage, req *receive.PublishRequest) {
@@ -64,7 +59,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 	receive.RegisterPublisherServer(grpcServer, &server{pusher: pusher})
 
-	log.Printf("Starting server on :%d, forwarding to %s", *port, *endpoint)
+	log.Printf("starting server on :%d, forwarding to %s", *port, *endpoint)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("gRPC server error: %v", err)
 	}
